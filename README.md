@@ -1,5 +1,6 @@
 # Lab 3 - Asynchronous Server Technology 
 
+[![Build Status](https://travis-ci.org/maxsock/AST_TP4.svg?branch=master)](https://travis-ci.org/maxsock/AST_TP4)
 
 ## Introduction 
 This lab is a Node.js lab that will act as an API. 
