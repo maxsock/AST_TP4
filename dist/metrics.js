@@ -14,22 +14,31 @@ var MetricsHandler = /** @class */ (function () {
     function MetricsHandler(path) {
         this.db = leveldb_1.LevelDb.open(path);
     }
-    MetricsHandler.prototype.save = function (key, met, callback) {
-        //if WriteStream works
-        // const stream = WriteStream(this.db)
-        //
-        // stream.on('error', callback)
-        // stream.on('close', callback)
-        //
-        // met.forEach((m: Metric) => {
-        //   stream.write({ key: `metric:${key}:${m.timestamp}`, value: m.value })
-        // })
-        //
-        // stream.end()
+    MetricsHandler.prototype.delete = function (key, callback) {
         var _this = this;
-        //if WriteStream is not working
-        met.forEach(function (m) {
-            _this.db.put("metric:" + key + ":" + m.timestamp, m.value);
+        var stream = this.db.createReadStream();
+        stream.on('error', callback)
+            .on('end', function (err) {
+            callback(null);
+        })
+            .on('data', function (data) {
+            var _a = data.key.split(":"), k = _a[1], timestamp = _a[2];
+            if (key !== k) {
+                console.log("LevelDB error : " + data + " does not match key " + key);
+                callback(new Error());
+            }
+            else {
+                _this.db.del(key, function (err) {
+                    if (err)
+                        callback(new Error());
+                });
+            }
+        });
+    };
+    MetricsHandler.prototype.save = function (key, metrics, callback) {
+        var _this = this;
+        metrics.forEach(function (m) {
+            _this.db.put("metric:" + key + ":" + m.timestamp, m.value).then(function () { callback(null); });
         });
     };
     MetricsHandler.prototype.get = function (key, callback) {
@@ -49,12 +58,6 @@ var MetricsHandler = /** @class */ (function () {
                 met.push(new Metric(timestamp, value));
             }
         });
-    };
-    MetricsHandler.get = function (callback) {
-        callback(null, [
-            new Metric('2013-11-04 14:00 UTC', 12),
-            new Metric('2013-11-04 14:30 UTC', 15)
-        ]);
     };
     return MetricsHandler;
 }());
