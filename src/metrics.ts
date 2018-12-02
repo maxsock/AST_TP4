@@ -18,7 +18,7 @@ export class MetricsHandler {
     this.db = LevelDb.open(path)
   }
 
-  public delete(key: number,callback: (err: Error | null) => void){
+  public remove(key: number,callback: (err: Error | null) => void){
     // const stream = this.db.createReadStream()
     //
     // stream.on('error', callback)

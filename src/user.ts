@@ -4,7 +4,7 @@ import WriteStream from 'level-ws'
 export class User {
   public username: string
   public email: string
-  private password: string = ""
+  public password: string = ""
 
   constructor(username: string, email: string, password: string, passwordHashed: boolean = false) {
     this.username = username
@@ -13,16 +13,19 @@ export class User {
     if (!passwordHashed) {
       this.setPassword(password)
     } else this.password = password
+
   }
 
   static fromDb(username: string, value: any): User {
-    const [,username] = data.value.key.split(":")
-    const[password, email] = data.value.key.split(":")
+    const [password, email] = value.split(":")
     // Parse db result and return a User
+    return new User(username, email, password)
   }
 
   public setPassword(toSet: string): void {
     // Hash and set password
+    this.password = toSet
+
   }
 
   public getPassword(): string {
@@ -31,6 +34,7 @@ export class User {
 
   public validatePassword(toValidate: String): boolean {
     // return comparison with hashed password
+    return this.password === toValidate
   }
 }
 
@@ -38,10 +42,14 @@ export class User {
 export class UserHandler {
   public db: any
 
+  constructor(path: string) {
+    this.db = LevelDb.open(path)
+  }
+
   public get(username: string, callback: (err: Error | null, result?: User) => void) {
     this.db.get(`user:${username}`, function (err: Error, data: any) {
       if (err) callback(err)
-      else if(data == undefined) callback(null,data)
+      else if(data === undefined) callback(null,data)
       else callback(null, User.fromDb(username, data))
 
     })
@@ -51,11 +59,9 @@ export class UserHandler {
     this.db.put(`user:${user.username}`,`${user.getPassword}:${user.email}`,(err: Error | null) => {callback(err)})
   }
 
-  public delete(username: string, callback: (err: Error | null) => void) {
-    // TODO this.db.delete
+  public remove(username: string, callback: (err: Error | null) => void) {
+    
   }
 
-  constructor(path: string) {
-    this.db = LevelDb.open(path)
-  }
+
 }

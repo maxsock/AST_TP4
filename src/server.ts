@@ -38,7 +38,6 @@ app.use('/', express.static(path.join(__dirname,'/../node_modules/boostrap/dist'
 
 const authRouter = express.Router()
 
-app.use(authRouter)
 
 authRouter.get('/login', (req: any, res: any) => {
   res.render('login')
@@ -62,10 +61,14 @@ authRouter.get('/signup', (req: any, res: any) => {
 })
 
 authRouter.get('/logout', (req: any, res: any) => {
-  delete req.session.loggedIn
-  delete req.session.user
+  if(req.session.loggedIn){
+    delete req.session.loggedIn
+    delete req.session.user
+  }
   res.redirect('/login')
 })
+
+app.use(authRouter)
 
 
 /*
@@ -88,7 +91,7 @@ userRouter.get('/:username', (req: any, res: any, next: any) => {
 
 userRouter.post('/', (req: any, res: any, next: any) => {
   dbUser.get(req.body.username, (err: Error | null, result?: User) => {
-    if(result === undefined || !err ){
+    if(result !== undefined || !err ){
       res.status(409).send("user already exists")
     } else {
       dbUser.save(req.body, (err: Error | null) => {
@@ -98,6 +101,7 @@ userRouter.post('/', (req: any, res: any, next: any) => {
     }
   })
 })
+
 
 
 // TODO: Update user
@@ -111,9 +115,6 @@ const authCheck = function (req: any, res: any, next: any) {
 }
 
 
-
-
-
 /*
   Root
 */
@@ -124,12 +125,14 @@ app.use(function (req: any, res: any, next: any) {
 })
 
 app.get('/',authCheck,(req: any, res:any) => {
-  res.render('index', {req.session.username})
+  res.render('index', {name : req.session.username})
 })
 
 
 
-
+/*
+  Metrics
+*/
 
 const router = express.Router()
 
@@ -138,9 +141,9 @@ router.use(function (req: any, res: any, next: any) {
   next()
 })
 
-router.get('/:id', (req: any, res: any) => {
+router.get('/:id', (req: any, res: any, next: any) => {
   dbMet.get(req.params.id, (err: Error | null, result?: Metric[]) => {
-    if (err) throw err
+    if (err) next(err)
     if (result === undefined) {
       res.write('no result')
       res.send()
@@ -149,11 +152,9 @@ router.get('/:id', (req: any, res: any) => {
   })
 })
 
-app.post('/:id', (req: any, res: any) => {
+router.post('/:id', (req: any, res: any, next: any) => {
   dbMet.save(req.params.id, req.body, (err: Error | null) => {
-    if (err) {
-      res.status(500).send(err.message)
-    }
+    if (err) next(err)
     res.status(200).send("Success")
   })
 })
@@ -161,16 +162,15 @@ app.post('/:id', (req: any, res: any) => {
 app.use('/metrics', authCheck, router)
 
 
-app.delete('/metrics/:id', (req: any, res: any) => {
-  dbMet.delete(req.params.id, (err: Error | null) => {
-    if (err) {
-      res.status(500).send(err.message)
-    }
+router.delete('/:id', (req: any, res: any, next: any) => {
+  dbMet.remove(req.params.id, (err: Error | null) => {
+    if (err) next(err)
     res.status(200).send()
   })
 })
 
 app.use(function (err: Error, req: any, res: any, next: any) {
+  console.log('got an error')
   console.error(err.stack)
   res.status(500).send('Something broke!')
 })
