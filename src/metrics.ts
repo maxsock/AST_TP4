@@ -18,7 +18,7 @@ export class MetricsHandler {
     this.db = LevelDb.open(path)
   }
 
-  public remove(key: number,callback: (err: Error | null) => void){
+  public remove(key: string,callback: (err: Error | null) => void){
     // const stream = this.db.createReadStream()
     //
     // stream.on('error', callback)
@@ -41,7 +41,7 @@ export class MetricsHandler {
    stream.on('close', callback)
    stream.on('error', callback)
 
-   stream.write({ type:'del' , key:'0'})
+   stream.write({ type:'del' , key:`metrics:${key}`})
 
 
    stream.end()
@@ -72,7 +72,7 @@ export class MetricsHandler {
     .on('data', (data:any) => {
       const [ , k, timestamp] = data.key.split(":")
       const value = data.value
-
+      console.log(data)
       if (key !== k) {
         console.log(`LevelDB error : ${data} does not match key ${key}`)
       }

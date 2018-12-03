@@ -13,7 +13,7 @@ const app = express()
 const port: string = process.env.PORT || '8080'
 
 const dbMet = new MetricsHandler('./db/metrics')
-const dbUser: UserHandler = new UserHandler('./db/users')
+const dbUser: UserHandler = new UserHandler('./db/user')
 
 
 app.use(bodyparser.json())
@@ -30,7 +30,7 @@ app.set('views', __dirname + "/../views")
 app.set('view engine', 'ejs');
 
 app.use('/', express.static(path.join(__dirname,'/../node_modules/jquery/dist')))
-app.use('/', express.static(path.join(__dirname,'/../node_modules/boostrap/dist')))
+app.use('/', express.static(path.join(__dirname,'/../node_modules/bootstrap/dist')))
 
 /*
   Authentication
@@ -92,17 +92,30 @@ userRouter.get('/:username', (req: any, res: any, next: any) => {
 userRouter.post('/', (req: any, res: any, next: any) => {
   dbUser.get(req.body.username, (err: Error | null, result?: User) => {
     if(result !== undefined || !err ){
-      res.status(409).send("user already exists")
+      res.redirect('/signup')
     } else {
-      dbUser.save(req.body, (err: Error | null) => {
+      const newUser = new User(req.body.username,req.body.email,req.body.password)
+      dbUser.save(newUser, (err: Error | null) => {
         if (err) next(err)
-        res.status(201).send("user persisted")
       })
+      res.redirect('/login')
+
     }
   })
 })
 
-
+userRouter.delete('/:username', (req: any, res: any, next: any) => {
+  dbUser.get(req.params.username, (err: Error | null, result?: User) => {
+    if(result === undefined || err ){
+      res.status(404).send("user not found")
+    } else {
+      dbUser.remove(req.params.username, (err: Error | null) => {
+        if (err) next(err)
+        res.status(201).send("user deleted")
+      })
+    }
+  })
+})
 
 // TODO: Update user
 
@@ -125,9 +138,18 @@ app.use(function (req: any, res: any, next: any) {
 })
 
 app.get('/',authCheck,(req: any, res:any) => {
-  res.render('index', {name : req.session.username})
+  res.render('index', {name : req.session.user.username})
 })
-
+app.get('/metrics.json', (req: any, res: any, next: any) => {
+  dbMet.get("0", (err: Error | null, result?: Metric[]) => {
+    if (err) next(err)
+    if (result === undefined) {
+      res.write('no result')
+      res.send()
+    }
+    else res.json(result)
+  })
+})
 
 
 /*
@@ -135,6 +157,10 @@ app.get('/',authCheck,(req: any, res:any) => {
 */
 
 const router = express.Router()
+
+router.get('/', (req: any, res: any) => {
+  res.render('newMetric')
+})
 
 router.use(function (req: any, res: any, next: any) {
   console.log('called metrics router')
@@ -152,8 +178,9 @@ router.get('/:id', (req: any, res: any, next: any) => {
   })
 })
 
-router.post('/:id', (req: any, res: any, next: any) => {
-  dbMet.save(req.params.id, req.body, (err: Error | null) => {
+router.post('/', (req: any, res: any, next: any) => {
+  console.log(req.body)
+  dbMet.save("0", req.body, (err: Error | null) => {
     if (err) next(err)
     res.status(200).send("Success")
   })

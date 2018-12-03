@@ -31,19 +31,29 @@ describe('Metrics', function () {
 
   describe("#save", function() {
     it('should save data',function(){
-
+      const met= [new Metric(`${new Date('2013-11-04 14:00 UTC').getTime()}`, 12)]
+      dbMet.save("1",met,(err: Error | null) => {
+        //expect(err).to.be.undefined
+      })
     })
     it('should update data',function(){
-
+      // const met= [new Metric(`${new Date('2013-11-04 14:00 UTC').getTime()}`, 12)]
+      // dbMet.save("0",met,(err: Error | null) => {
+      //   expect(err).to.be.null
+      // })
     })
   })
 
   describe("#delete", function() {
     it('should delete data',function(){
-
+      // dbMet.remove(0,function (err: Error | null) {
+      //   expect(err).to.be.null
+      // })
     })
     it('should not fail if data does not exist',function(){
-
+      // dbMet.remove(1234,function (err: Error | null) {
+      //   expect(err).to.be.null
+      // })
     })
   })
 })
