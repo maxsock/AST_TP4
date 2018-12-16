@@ -19,33 +19,18 @@ export class MetricsHandler {
   }
 
   public remove(key: string,callback: (err: Error | null) => void){
-    // const stream = this.db.createReadStream()
-    //
-    // stream.on('error', callback)
-    // .on('end', (err:Error) =>{
-    //   callback(null)
-    // })
-    // .on('data', (data:any) => {
-    //   const [ , k, timestamp] = data.key.split(":")
-    //
-    //   if (key !== k) {
-    //     console.log(`LevelDB error : ${data} does not match key ${key}`)
-    //     callback(new Error())
-    //   }
-    //   else {
-    //     this.db.del(key)
-    //   }
-    // })
-    const stream = WriteStream(this.db)
+    const stream = this.db.createReadStream()
 
-   stream.on('close', callback)
-   stream.on('error', callback)
-
-   stream.write({ type:'del' , key:`metrics:${key}`})
-
-
-   stream.end()
-
+    stream.on('error', callback)
+    .on('end', (err:Error) =>{
+      callback(null)
+    })
+    .on('data', (data:any) => {
+      const [ , k, timestamp] = data.key.split(":")
+      if (key === k) {
+        this.db.del(data.key)
+      }
+    })
   }
 
    public save(key: string, metrics: Metric[], callback: (error: Error | null) => void) {
@@ -72,7 +57,6 @@ export class MetricsHandler {
     .on('data', (data:any) => {
       const [ , k, timestamp] = data.key.split(":")
       const value = data.value
-      console.log(data)
       if (key !== k) {
         console.log(`LevelDB error : ${data} does not match key ${key}`)
       }

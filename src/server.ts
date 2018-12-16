@@ -13,7 +13,7 @@ const app = express()
 const port: string = process.env.PORT || '8080'
 
 const dbMet = new MetricsHandler('./db/metrics')
-const dbUser: UserHandler = new UserHandler('./db/user')
+const dbUser: UserHandler = new UserHandler('./db/users')
 
 
 app.use(bodyparser.json())
@@ -179,8 +179,7 @@ router.get('/:id', (req: any, res: any, next: any) => {
 })
 
 router.post('/', (req: any, res: any, next: any) => {
-  console.log(req.body)
-  dbMet.save("0", req.body, (err: Error | null) => {
+  dbMet.save("0", [req.body], (err: Error | null) => {
     if (err) next(err)
     res.status(200).send("Success")
   })

@@ -10,7 +10,6 @@ export class User {
   constructor(username: string, email: string, password: string, passwordHashed: boolean = false) {
     this.username = username
     this.email = email
-
     if (!passwordHashed) {
       this.setPassword(password)
     } else this.password = password
@@ -20,7 +19,7 @@ export class User {
   static fromDb(username: string, value: any): User {
     const [password, email] = value.split(":")
     // Parse db result and return a User
-    return new User(username, email, password)
+    return new User(username, email, password,true)
   }
 
   public setPassword(toSet: string): void {
