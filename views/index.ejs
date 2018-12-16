@@ -3,40 +3,156 @@
 
 <head>
   <% include partials/head %>
+  <style>
+
+  .bar{
+    fill: steelblue;
+  }
+
+  .bar:hover{
+    fill: brown;
+  }
+
+	.axis {
+	  font: 10px sans-serif;
+	}
+
+	.axis path,
+	.axis line {
+	  fill: none;
+	  stroke: #000;
+	  shape-rendering: crispEdges;
+	}
+
+	</style>
 </head>
 
 <body class="container">
+  <div class="row">
   <div class="col-md-6.col-md-offset-3">
     <h1>Hello
       <%= name %>
     </h1>
-    <button class="btn btn-success" id="show-metrics">
+    <button class="btn btn-success" id="show-metrics" onclick="getMetrics()">
       Bring the metrics
     </button>
-    <button class="btn btn-primary" href="/metrics" onClick='document.location.href="/metrics"'>
+    <button class="btn btn-primary" href="/metrics/new" onClick='document.location.href="/metrics/new"'>
       Add metrics
     </button>
     <button class="btn btn-danger" href="/logout" onClick='document.location.href="/logout"'>
       Logout
     </button>
-      <button class="btn btn-danger">
+
+  </div>
+  </div>
+
+<div class="row justify-content-center">
+    <div id="graph"></div>
+</div>
+<div class="row">
+  <form class="form-inline" action="/metrics/delete" method="post">
+    <div class="form-group mb-2">
+      <select class="form-control" id="exampleFormControlSelect1" name="timestamp" ></select>
+    </div>
+    <div class="form-group mx-sm-3 mb-2">
+      <button class="btn btn-danger" type="submit" value="Submit">
         Delete
       </button>
-
-    <div id="metrics"></div>
-  </div>
+    </div>
+  </form>
+</div>
+</div>
 </body>
-
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="https://momentjs.com/downloads/moment-with-locales.js"></script>
 <script>
   $('#show-metrics').click((e) => {
     e.preventDefault()
-    $.getJSON('/metrics.json', {}, (data) => {
+    $.getJSON('/metrics', {}, (data) => {
       const content = data.map(d => {
         return `<p>timestamp: ${d.timestamp}, value: ${d.value}</p>`
       })
-      $("#metrics").append(content.join("\n"))
+      getMetrics(data)
+      fillDropDown(data)
     })
   })
+  function fillDropDown(data){
+    select = document.getElementById( 'exampleFormControlSelect1' );
+    data.forEach(function(d) {
+      select.add(new Option(moment.unix(d.timestamp).format("LLL"),d.timestamp));
+    });
+  }
+  function getMetrics(data){
+    var margin = {top: 0, right: 20, bottom: 130, left: 40},
+        width = 600 - margin.left - margin.right,
+        height = 300 - margin.top - margin.bottom;
+
+    // set the ranges
+    var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
+    var y = d3.scale.linear().range([height, 0]);
+
+    // define the axis
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .ticks(10);
+
+    // add the SVG element
+    var svg = d3.select("#graph").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")");
+
+
+        data.forEach(function(d) {
+            d.timestamp = d.timestamp;
+            d.value = +d.value
+        });
+
+      // scale the range of the data
+      x.domain(data.map(function(d) { return moment.unix(d.timestamp).format("LLL"); }));
+      y.domain([0, d3.max(data, function(d) { return d.value; })]);
+
+      // add axis
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis)
+        .selectAll("text")
+          .style("text-anchor", "end")
+          .attr("dx", "-.8em")
+          .attr("dy", "-.55em")
+          .attr("transform", "rotate(-60)" );
+
+      svg.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+        .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 5)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end")
+          .text("Value");
+
+
+      // Add bar chart
+      svg.selectAll("bar")
+          .data(data)
+        .enter().append("rect")
+          .attr("class", "bar")
+          .attr("x", function(d) { return x(moment.unix(d.timestamp).format("LLL")); })
+          .attr("width", x.rangeBand())
+          .attr("y", function(d) { return y(d.value); })
+          .attr("height", function(d) { return height - y(d.value); });
+
+  }
+
 </script>
 
 </html>

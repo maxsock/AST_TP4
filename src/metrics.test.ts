@@ -64,15 +64,15 @@ describe('Metrics', function () {
   describe("#delete", function() {
     const met= [new Metric(`${new Date('2013-11-04 14:00 UTC').getTime()}`, 12)]
     before(function(done){
-      dbMet.save("3",met,(err: Error | null) => {
+      dbMet.save("test",met,(err: Error | null) => {
         expect(err).to.be.undefined
         done()
       })
     })
     it('should delete data',function(done){
-       dbMet.remove("3",function (err: Error | null) {
+       dbMet.remove("test",met[0].timestamp,function (err: Error | null) {
          expect(err).to.be.null
-         dbMet.get("3", function (err: Error | null, result?: Metric[]) {
+         dbMet.get("test", function (err: Error | null, result?: Metric[]) {
            expect(err).to.be.null
            expect(result).to.not.be.undefined
            expect(result).to.be.an('array')
@@ -82,7 +82,7 @@ describe('Metrics', function () {
        })
     })
     it('should not fail if data does not exist',function(done){
-       dbMet.remove("1234",function (err: Error | null) {
+       dbMet.remove("1234","13423",function (err: Error | null) {
          expect(err).to.be.null
          done()
        })

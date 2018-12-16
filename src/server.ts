@@ -6,6 +6,7 @@ import session = require('express-session')
 import levelSession = require('level-session-store')
 import { UserHandler, User } from './user'
 import path = require('path')
+var moment = require('moment');
 
 const LevelStore = levelSession(session)
 
@@ -158,7 +159,7 @@ app.get('/metrics.json', (req: any, res: any, next: any) => {
 
 const router = express.Router()
 
-router.get('/', (req: any, res: any) => {
+router.get('/new', (req: any, res: any) => {
   res.render('newMetric')
 })
 
@@ -167,8 +168,8 @@ router.use(function (req: any, res: any, next: any) {
   next()
 })
 
-router.get('/:id', (req: any, res: any, next: any) => {
-  dbMet.get(req.params.id, (err: Error | null, result?: Metric[]) => {
+router.get('/', (req: any, res: any, next: any) => {
+  dbMet.get(req.session.user.username, (err: Error | null, result?: Metric[]) => {
     if (err) next(err)
     if (result === undefined) {
       res.write('no result')
@@ -179,19 +180,20 @@ router.get('/:id', (req: any, res: any, next: any) => {
 })
 
 router.post('/', (req: any, res: any, next: any) => {
-  dbMet.save("0", [req.body], (err: Error | null) => {
+  req.body.timestamp = moment(req.body.timestamp).format("X");
+  dbMet.save(req.session.user.username, [req.body], (err: Error | null) => {
     if (err) next(err)
-    res.status(200).send("Success")
+    res.redirect('/')
   })
 })
 
 app.use('/metrics', authCheck, router)
 
 
-router.delete('/:id', (req: any, res: any, next: any) => {
-  dbMet.remove(req.params.id, (err: Error | null) => {
+router.post('/delete', (req: any, res: any, next: any) => {
+  dbMet.remove(req.session.user.username,req.body.timestamp, (err: Error | null) => {
     if (err) next(err)
-    res.status(200).send()
+    res.redirect('/')
   })
 })
 

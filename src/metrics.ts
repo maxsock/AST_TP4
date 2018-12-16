@@ -18,16 +18,16 @@ export class MetricsHandler {
     this.db = LevelDb.open(path)
   }
 
-  public remove(key: string,callback: (err: Error | null) => void){
+  public remove(key: string,time: string,callback: (err: Error | null) => void){
     const stream = this.db.createReadStream()
 
-    stream.on('error', callback)
-    .on('end', (err:Error) =>{
+    stream.on('error', (err:Error)=>callback(err))
+    .on('end', () =>{
       callback(null)
     })
     .on('data', (data:any) => {
       const [ , k, timestamp] = data.key.split(":")
-      if (key === k) {
+      if (key === k && time === timestamp) {
         this.db.del(data.key)
       }
     })
